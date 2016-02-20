@@ -1,0 +1,42 @@
+# General
+
+## Contexte
+- Le jeu se déroule dans les rêves d'un enfant
+- L'enfant rejoint l'univers du jeu chaque nuit
+- Tout est de nuit (plus facile, shaders plus évidents)
+
+## Style de jeu
+- Aventure/Exploration/RPG simpliste
+- Quêtes, quelques ennemis, quelques labyrinthes
+
+# Implémentation
+
+## Rendu
+- Raycasting, une seule hauteur d'environnement
+- Sprites animés pour PNJ/Mobs
+
+
+# Histoire
+
+- Le monde dont rêve l'enfant, à la zelda, est géré par une petite fille,
+  la princesse.
+- L'enfant est fasciné par cette petite fille et rejoint son monde dans
+  ses rêves.
+- L'univers est naïf, rêvé par un gosse. Pas de tension politique.
+- Le "mal" n'est pas maléfique. Il s'agit plus de personnifications
+  d'obstacles. Ex:
+  * Les ennemis ne sont pas des hordes d'un seigneur des ténèbres,
+    mais des accrocs à surmonter.
+  * Les labyrinthes et autres "donjons" sont simplement des épreuves qui
+    existent en soi.
+  * 
+
+
+## Mise en place
+- Suggestion du rêve : juste via menu ? Image d'intro ?
+- Fortes contraintes graphiques : le raycasting est pauvre
+- 
+
+## Chronologie
+- Château : point de départ où on fait connaissance avec la princesse
+- 
