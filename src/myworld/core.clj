@@ -13,7 +13,7 @@
 
 (def default-frustum
   "Projection attributes"
-  {:fov 60,
+  {:fov (q/radians 60) ,
    :width 190,
    :height 120})
 
@@ -53,7 +53,7 @@
    ; player position :
    :player-height (/ UNIT 2)
    :x 736, :y 1000
-   :rot -90
+   :rot 0
    })
 
 (defn setup []
@@ -83,8 +83,8 @@
 
 (defn rotate! [{:keys [pressed-keys] :as state}]
   (cond
-    (some #{:left} pressed-keys) (rotate-and-normalize state 12)
-    (some #{:right} pressed-keys) (rotate-and-normalize state -12)
+    (some #{:left} pressed-keys) (rotate-and-normalize state 0.2)
+    (some #{:right} pressed-keys) (rotate-and-normalize state -0.2)
     :else state))
 
 (defn lift-player [state offset]

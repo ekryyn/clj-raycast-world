@@ -9,9 +9,10 @@
   (map vector (iterate inc 0) coll)  )
 
 (defn normalize-angle [angle]
-  (let [angle (mod angle 360)]
-    (if (> angle 180)
-      (- angle 360)
+  (let [pipi (* 2 Math/PI)
+        angle (mod angle pipi)]
+    (if (> angle Math/PI)
+      (- angle pipi)
       angle)))
 
 (defn world-cell [{:keys [width grid]} l c]
@@ -19,7 +20,7 @@
 
 (defn focal-dist
   [{:keys [fov width height]}]
-  (let [angle (q/radians (/ fov 2))]
+  (let [angle (/ fov 2)]
     (/ (/ width 2) (q/tan angle))))
 
 (defn in-world? [world x y]
@@ -39,7 +40,7 @@
 (defn- next-horiz-hit
   [x y angle world]
   (let
-    [a (q/radians angle)
+    [a angle
      tan-a (q/tan a)
      Ya (if (pos? a) (- UNIT) UNIT)
      Xa (if (zero? tan-a)
@@ -60,12 +61,13 @@
 (defn- next-vert-hit
   [x y angle world]
   (let
-    [ a (q/radians angle)
+    [a angle
+     half-pi (/ Math/PI 2)
      tan-a (q/tan a)
-     Xa (if (< -90 angle 90) UNIT (- UNIT))
+     Xa (if (< (- half-pi) angle half-pi) UNIT (- UNIT))
      Ya (* Xa (q/tan (- a)))]
     (loop
-      [Bx (if (< -90 angle 90)
+      [Bx (if (< (- half-pi) angle half-pi)
             (+ (* (q/floor (/ x UNIT)) UNIT) UNIT)
             (- (* (q/floor (/ x UNIT)) UNIT) 1))
        By (+ y (* (- x Bx) (q/tan a)))]
@@ -76,7 +78,7 @@
 
 (defn next-wall
   [x y angle world]
-  (let [a (q/radians angle)
+  (let [a angle
         check-horiz? (not (zero? (q/sin a)))
         check-vert? (not (zero? (q/cos a)))
         ]
@@ -91,7 +93,7 @@
 
 
 (defn proj-angles
-  "Get angles (in degrees) of rays to cast from current view"
+  "Get angles (in radians) of rays to cast from current view"
   [rot fov width]
   (let [step (/ fov width)]
     (loop [column 0
@@ -110,7 +112,7 @@
     [[wx wy hit-dir] (next-wall x y angle world)
      dist (q/dist x y wx wy)]
     {
-     :distance (* dist (q/cos (q/radians (- angle rot)))); we'll use above later
+     :distance (* dist (q/cos (- angle rot))); we'll use above later
      :angle angle
      :x wx, :y wy
      :hit-direction hit-dir
@@ -121,7 +123,7 @@
   [(+ x1 x2) (+ y1 y2)])
 
 (defn rotate-vector [angle [vx vy]]
-  (let [a (q/radians angle)
+  (let [a angle
         cs (q/cos a)
         sn (q/sin a) ]
     [(- (* vx cs) (* vy sn))
@@ -131,7 +133,7 @@
   "cast of the floor, returns vector [dx, dy]"
   [focal player-height beta]
   (fn [py]
-    (let [b (q/radians beta)
+    (let [b beta
           straight (/ (* player-height focal) py)
           distance (/ straight (q/cos b))
           dx (* straight (q/tan b))
@@ -140,7 +142,7 @@
 
 (defn sprite-screen-x
   [{:keys [fov width] :as frustum} angle]
-  (let [a (q/radians angle)
+  (let [a angle
         focal (focal-dist frustum)
         distance-to-half-screen (* focal (q/tan a))
         distance (- (/ width 2) distance-to-half-screen)]
@@ -149,19 +151,19 @@
 (defn sprite-angle [rot player-x player-y sprite-x sprite-y]
   (let [dx (- sprite-x player-x )
         dy (- sprite-y player-y )]
-    (normalize-angle (- (q/degrees (q/atan2 (- dy) dx)) rot))))
+    (normalize-angle (- (q/atan2 (- dy) dx) rot))))
 
 
 (defn sprite-visible? [rot player-x player-y sprite-x sprite-y fov]
   (let [angle (sprite-angle rot player-x player-y sprite-x sprite-y)
-        extra (+ fov 20)
+        extra (+ fov 0.35)
         ]
     (<= (/ extra -2) angle (/ extra 2))))
 
 
 (defn forward-vector
   [{:keys [world rot x y] :as state} speed]
-  (let [a (q/radians rot)
+  (let [a rot
         dx (* speed (q/cos a))
         dy (* (- speed) (q/sin a))]
     [(if (wall? world (+ x dx) y) 0 dx)

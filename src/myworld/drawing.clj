@@ -90,7 +90,7 @@
                                       )))))
 
      ; ceiling (take top (repeat (q/color 0 0 30)))
-     ; ceiling (get-dome-line sky-texture midpoint top (+ 180 angle))
+     ; ceiling (get-dome-line sky-texture midpoint top (+ Math/PI angle))
      ceiling-cast (floor-caster focal (- UNIT player-height) (- angle rot))
      ceiling-points (map #(->> %1
                                (- midpoint)
