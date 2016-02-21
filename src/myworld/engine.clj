@@ -15,8 +15,12 @@
       (- angle pipi)
       angle)))
 
-(defn world-cell [{:keys [width grid]} l c]
-  (let [index (+ c (* width l))] (nth grid index)))
+(defn world-cell [{:keys [width grid length]} l c]
+  (let [l (max l 0)
+        c (max c 0)
+        i (+ c (* width l))
+        i (max 0 i)
+        i (min i (dec length))] (nth grid i)))
 
 (defn focal-dist
   [{:keys [fov width height]}]
@@ -35,7 +39,7 @@
   (let [c (q/floor (/ x UNIT))
         r (q/floor (/ y UNIT))]
     (or (not (in-world? world x y))
-        (= (world-cell world r c) 1))))
+        (not= (world-cell world r c) 0))))
 
 (defn- next-horiz-hit
   [x y angle world]
@@ -138,7 +142,7 @@
           distance (/ straight (q/cos b))
           dx (* straight (q/tan b))
           dy straight]
-       [dx dy])))
+       [dy (- dx)])))
 
 (defn sprite-screen-x
   [{:keys [fov width] :as frustum} angle]

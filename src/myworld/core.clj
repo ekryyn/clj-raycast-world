@@ -22,6 +22,7 @@
    :bush (create-sprite (q/load-image "bush.gif"))
    :flower (create-sprite (q/load-image "flower.gif"))
    :blue-flower (create-sprite (q/load-image "blue-flower.gif"))
+   :chandelier (create-sprite (q/load-image "chandelier.gif") 4)
    })
 
 (defn init-state []
@@ -31,10 +32,16 @@
    :midpoint-ratio 0.5
 
    :pressed-keys []
-   :wall-texture (q/load-image "wall.png")
-   :floor-texture (q/load-image "floor.png")
+
+   :font (q/create-font "Volter__28Goldfish_29.ttf" 12 false)
+   :textures {:grass (q/load-image "floor.png")
+              :stone (q/load-image "stone1.png")
+              :brick (q/load-image "wall.png")
+              :carpet (q/load-image "carpet.png")
+              :planks (q/load-image "ceiling.png")
+              }
+
    :sky-texture (q/load-image "moon.png")
-   :ceiling-texture (q/load-image "ceiling.png")
 
    ; set some sprites
    :sprites (load-sprites (q/load-image "world1.png") (sprite-map))
@@ -45,10 +52,13 @@
    ;
    ;  ]
 
-   ; set a map
-   :world (load-map (q/load-image "world1.png"))
+   :world (load-wall-map (q/load-image "world1.png"))
+   :floors (load-floor-map (q/load-image "world1-floor.png"))
+   :ceilings (load-ceiling-map (q/load-image "world1-ceiling.png"))
 
    :last-frame 0
+
+   :dialogue (create-dialogue "Salut les connards !")
 
    ; player position :
    :player-height (/ UNIT 2)
@@ -116,7 +126,21 @@
 (defn animate-sprites [{:keys [sprites] :as state}]
   (assoc state
          :sprites (map #(sprite-update-time % (* 0.001 (q/millis)))
-                       sprites))) 
+                       sprites)))
+
+(defn play-dialogue
+  [{:keys [dialogue] :as state}]
+  (if (nil? dialogue)
+    state
+    (assoc state :dialogue (dialogue-step-letter dialogue (q/millis) 200))
+    )
+  )
+
+(defn player-action
+  "handle main (space bar) action"
+  [state]
+  (assoc state :dialogue (create-dialogue "Bonjour, je suis vraiment heureux !"))
+  )
 
 (defn update-state
   [{:keys [frustum] :as state}]
@@ -127,6 +151,7 @@
                        :midpoint (/ (:height frustum) 2)
                        :player-height (/ UNIT 2))))
        ; process actions
+       (play-dialogue)
        (look-up-an-down!)
        (jump-and-crouch!)
        (rotate!)
@@ -142,7 +167,11 @@
 
 (defn key-pressed [state event]
   (let [k (:key event)]
-    (update state :pressed-keys conj k)))
+    ;(println k)
+    (if (= (name k) " ")
+      (player-action state)
+      (update state :pressed-keys conj k))
+    ))
 
 
 (defn draw-state
@@ -150,6 +179,7 @@
   ;(draw-minimap state)
   (q/background 255)
   (q/no-stroke)
+  (q/text-font (:font state))
 
   (let [start (q/millis)
         fov (:fov frustum)
@@ -158,13 +188,24 @@
         z-buf (map #(:distance %) cast-results)
         visible-pred #(sprite-visible? rot x y %1 %2 fov)
         visible-sprites (filter #(visible-pred (:x %) (:y %)) sprites)]
+    (q/push-matrix)
+    (q/scale 4)
     (doseq [[index cr] (enumerate cast-results)
-            :let [line (line-colors state cr)]]
-      (draw-vertical-line! index line))
+            ;:let [line (line-colors state cr)]
+            ]
+      ;(draw-vertical-line! index line)
+      (draw-stripe! state cr index)
+      )
     (q/no-stroke)
     (doseq [sprite
             (reverse (sort-by #(q/dist x y (:x %1) (:y %1)) visible-sprites))]
       (draw-sprite! state z-buf sprite))
+    (if (:dialogue state)
+      (do
+        (q/text-size 8)
+        (q/fill 255)
+        (q/text (-> state (:dialogue) (:display-text)) 10 100)))
+    (q/pop-matrix)
     (q/text-size 24)
     (q/fill (q/color 0 255 255))
     (q/text (str (format "%.2f" (/ 1.0 (* 0.001 (- (q/millis) start)))) " FPS")
@@ -180,10 +221,11 @@
 
 (defn -main [& args] (q/sketch
   :title "You spin my circle right round"
+  :settings #(q/smooth 0)
   :size [760 700]
-  :renderer :java2d
   ; setup function called only once, during sketch initialization.
   :setup setup
+  :renderer :java2d
   :host "canvas-id"
   :mouse-moved mouse-moved
   :key-pressed key-pressed

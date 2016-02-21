@@ -28,6 +28,15 @@
       sprite)))
 
 
+(defn sprite-get-frame
+  "Get the visible part of the texture"
+   [{:keys [texture row-index col-index width height]}]
+   (q/get-pixel texture
+                (* col-index width)
+                (* row-index height)
+                width height))
+
+
 (defn sprite-get-pixel
   [{:keys [texture width height row-index col-index] :as sprite}
    x y]

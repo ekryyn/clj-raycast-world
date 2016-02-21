@@ -1,5 +1,6 @@
 (ns myworld.drawing (:require [quil.core :as q]))
 
+(use 'myworld.utils)
 (use 'myworld.engine)
 (use 'myworld.sprite)
 
@@ -30,6 +31,15 @@
               )
          (range (* ratio height)))))
 
+;(defn draw-sprite-stripe!
+;  [img x-offset ratio distance column-index]
+;  (let [height (:height img)
+;        line (sprite-get-stripe img column-index)
+;        ]
+;    (q/resize line PIXEL (* ratio height PIXEL))
+;    )
+;  )
+
 (defn get-wall-endpoints
   "top and bottom Y coordinate of the wall, centered in available space"
   [max-height wall-height midpoint]
@@ -40,94 +50,117 @@
     [start end]))
 
 
-(defn coord-mapper [size]
-  (fn [x y] [(* size x) (* size y)]))
-
 
 (defn- tex-mapper [tex-height wall-height]
   (fn [wall-y] (/ (* wall-y tex-height) wall-height)))
 
 
-
-(defn get-floor-color [tex playerx playery fx fy]
+(defn get-floor-color [floor-map textures playerx playery fx fy]
   (let [dist (q/dist fx fy playerx playery)
+        c (q/floor  (/ fx UNIT))
+        r (q/floor  (/ fy UNIT))
+        tex-type (world-cell floor-map r c)
+        tex (tex-type textures)
         cmap #(mod % 64)
-        texcolor (q/get-pixel tex (cmap fx) (cmap fy))]
+        texcolor (q/get-pixel tex (cmap fx) (cmap fy))
+        ]
     (distance-blend texcolor dist)
-    ; texcolor
+    ;texcolor
     ))
 
-(defn get-dome-line [tex midpoint height angle]
-  (map #(q/get-pixel tex (* 2 angle) (- (+ % 120) midpoint)) (range height)))
+; (get-dome-line sky-texture midpoint top (+ Math/PI angle))
+(defn draw-dome-stripe! [tex midpoint height angle column-index]
+  (let [x-offset (mod (* 120 angle) 720)
+        y-offset (- 120 midpoint)
+        line (q/get-pixel tex x-offset y-offset 1 (inc height))]
+    ;(q/resize line 0 height)
+    (q/image line column-index 0)))
 
-(defn line-colors
-  "return the line (list of colors) to draw from a cast result"
-  [{:keys [rot wall-texture floor-texture sky-texture ceiling-texture
-           player-height] :as state}
-   {:keys [distance frustum hit-direction x y angle] :as cast-result}]
-  (let
-    [focal (focal-dist frustum)
-     height (:height frustum)
-     wall-height UNIT ;; const ?
-     real-height (* (/ wall-height distance) focal)
-     midpoint (:midpoint state (/ height 2))
-     [start end] (get-wall-endpoints height real-height midpoint)
-     top (max start 0)
-     bottom (min end height)
-     projected-height (- bottom top)
-     x-tex (if (= hit-direction :horizontal) (mod x 64) (mod y 64))
-     y-mapper (fn [y] (q/map-range y start end 0 64))
-     ;y-mapper (tex-mapper 64 real-height)
-     wall-colors (map #(q/get-pixel wall-texture x-tex (y-mapper %))
-                      (filter #(< -1 % height) (range start end)))
-     wall (let [otd (q/floor (/ (- real-height projected-height) 2))
-                dmp (- midpoint (/ height 2))
-                top-drop (- otd dmp)
-                bottom-drop (- real-height projected-height otd)]
-            (->> wall-colors
-                 (map (fn [color] (-> color
-                                      (distance-blend distance)
-                                      )))))
-
-     ; ceiling (take top (repeat (q/color 0 0 30)))
-     ; ceiling (get-dome-line sky-texture midpoint top (+ Math/PI angle))
-     ceiling-cast (floor-caster focal (- UNIT player-height) (- angle rot))
-     ceiling-points (map #(->> %1
-                               (- midpoint)
-                               (ceiling-cast)
-                               (rotate-vector (- rot))
-                               (add-vector [(:x state) (:y state)]))
-                         (range 1 (inc top)))
-     ceiling (map #(apply get-floor-color ceiling-texture (:x state) (:y state) %)
-                 ceiling-points)
-
-     ; prepare values for floor casting
-     floor-cast (floor-caster focal player-height (- angle rot))
-     floor-points (map #(->> %1
-                             (+ (- midpoint))
-                             (floor-cast)
-                             (rotate-vector (- rot))
-                             (add-vector [(:x state) (:y state)]))
-                       (range bottom height))
-     floor (map #(apply get-floor-color floor-texture (:x state) (:y state) %)
-                floor-points)
-     ; ceiling (map #(apply get-floor-color ceiling-texture (:x state) (:y state) %)
-     ;            floor-points)
-     ]
-    (concat ceiling wall floor)))
-
+(defn draw-wall-stripe! [tex x-offset x y height distance]
+  (let [line (q/get-pixel tex x-offset 0 1 64)
+        ratio (/ (inc height) 64)
+        xpos x
+        ypos y
+        ysize (inc height)
+        dark (q/map-range distance 0 500 0 255)
+        ]
+    ;(q/resize line 1 ysize)
+    (q/push-matrix)
+    (q/scale 1 ratio)
+    (q/image line xpos (/ ypos ratio))
+    (q/pop-matrix)
+    (q/fill (q/color 0 0 0 dark))
+    (q/rect xpos (dec ypos) 1 (inc ysize))
+    ))
 
 (defn draw-vertical-line!
   "from a list of colors, draw vertical line at x on screen"
   ([x colors] (draw-vertical-line! x colors 0))
   ([x colors y-offset]
-   (let [size 4
-         to-coord (coord-mapper size)
-         draw-rect (fn [x y] (q/rect x y (inc size) (inc size)))
+   (let [
+         draw-rect (fn [x y] (q/rect x y 2 1))
          indexed-clors (map vector (iterate inc 0) colors)]
      (doseq [[y color] indexed-clors]
        (q/fill color)
-       (apply draw-rect (to-coord x (+ y y-offset)))))))
+       (draw-rect x (+ y y-offset))))))
+
+(defn draw-ceiling!
+  [{:keys [frustum player-height rot midpoint ceilings textures] :as state}
+   column-index angle y-start y-end
+   ]
+  (let [
+    focal (focal-dist frustum)
+    floor-cast (floor-caster focal (- UNIT player-height) (- angle rot))
+    floor-points (map #(->> %1
+                            (- midpoint)
+                            (floor-cast)
+                            (rotate-vector (- rot))
+                            (add-vector [(:x state) (:y state)]))
+                      (range y-start y-end))
+    floor (map #(apply get-floor-color ceilings textures (:x state) (:y state) %)
+              floor-points)]
+    (draw-vertical-line! column-index floor y-start)
+    ))
+
+(defn draw-floor!
+  [{:keys [frustum player-height rot midpoint floors textures] :as state}
+   column-index angle y-start y-end
+   ]
+  (let [
+    focal (focal-dist frustum)
+    floor-cast (floor-caster focal player-height (- angle rot))
+    floor-points (map #(->> %1
+                            (+ (- midpoint))
+                            (floor-cast)
+                            (rotate-vector (- rot))
+                            (add-vector [(:x state) (:y state)]))
+                      (range y-start y-end))
+    floor (map #(apply get-floor-color floors textures (:x state) (:y state) %)
+              floor-points)]
+    (draw-vertical-line! column-index floor y-start)
+    ))
+
+(defn draw-stripe!
+  [{:keys [rot textures sky-texture floors ceilings
+           player-height] :as state}
+   {:keys [distance frustum hit-direction x y angle] :as cast-result}
+   column-index]
+  (let
+    [focal (focal-dist frustum)
+     wall-height (* (/ UNIT distance) focal)
+     height (:height frustum)
+     x-tex (if (= hit-direction :horizontal) (mod x 64) (mod y 64))
+     midpoint (:midpoint state (/ height 2))
+     [start end] (get-wall-endpoints height wall-height midpoint)
+     top (max start 0)
+     bottom (min end height)
+     ]
+    (draw-floor! state column-index angle (dec bottom) height)
+    ;(draw-ceiling! state column-index angle 0 (inc top))
+    (draw-dome-stripe! sky-texture midpoint top angle column-index)
+    (draw-wall-stripe! (:brick textures)
+                       x-tex column-index start wall-height distance)
+    ))
 
 (defn draw-square
   [line, column, color]
@@ -145,24 +178,25 @@
   (let [fov (:fov frustum)
         focal (focal-dist frustum)
         angle (sprite-angle rot x y (:x sprite) (:y sprite))
-        pos-x (sprite-screen-x frustum angle)
         sp-dist (q/dist x y (:x sprite) (:y sprite))
         ratio (/ focal sp-dist)
         sp-height (:height sprite)
+        sp-width (:width sprite)
+        pos-x (- (sprite-screen-x frustum angle) (/ (* sp-width ratio) 2))
         off-floor (/ (- UNIT sp-height) 2)
-        pos-y (+ (* ratio off-floor) (- midpoint (/ (* ratio sp-height) 2)))]
-    ; (q/text-size 20)
-    ; (q/text (str "z-buf size " (count z-buf)) 10 25)
-    ; (q/text (str "Alpha: " (format "%.2f" angle)) 10 50)
-    ; (q/text (str "Pos-x: " (format "%.2f" pos-x)) 10 75)
-    ; (q/text (str "Dist :" (format "%.2f" sp-dist)) 10 100)
-    ; (q/text (str "Ratio :" (format "%.2f" ratio)) 10 125)
-    (doseq [[i col] (enumerate (sprite-columns sprite ratio))]
-      (if (< sp-dist (nth z-buf (+ pos-x i) 0))
-        (draw-vertical-line!
-          (+ pos-x i)
-          (sprite-stripe sprite col ratio sp-dist)
-          (- pos-y (* ratio (:z sprite 0))))))))
+        pos-y (+ (* ratio off-floor) (- midpoint (/ (* ratio sp-height) 2)))
+        frame (sprite-get-frame sprite)]
+    (q/push-matrix)
+    (q/scale 1 ratio)
+    (q/tint (q/map-range sp-dist 0 500 255 0))
+    (doseq [i (range (* ratio sp-width))
+            :let [stripe (q/get-pixel frame (/ i ratio) 0 1 sp-height)]
+            :when (< sp-dist (nth z-buf (+ pos-x i) 0))
+            ]
+      (q/image stripe (+ pos-x (* i 1)) (/ pos-y ratio))
+      )
+    (q/tint 255)
+    (q/pop-matrix)))
 
 
 
