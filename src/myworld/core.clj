@@ -18,11 +18,11 @@
    :height 120})
 
 (defn sprite-map []
-  {:princess (create-sprite (q/load-image "princess.gif") 4)
-   :bush (create-sprite (q/load-image "bush.gif"))
-   :flower (create-sprite (q/load-image "flower.gif"))
-   :blue-flower (create-sprite (q/load-image "blue-flower.gif"))
-   :chandelier (create-sprite (q/load-image "chandelier.gif") 4)
+  {:princess (create-sprite (q/load-image "res/sprites/princess.gif") 4)
+   :bush (create-sprite (q/load-image "res/sprites/bush.gif"))
+   :flower (create-sprite (q/load-image "res/sprites/flower.gif"))
+   :blue-flower (create-sprite (q/load-image "res/sprites/blue-flower.gif"))
+   :chandelier (create-sprite (q/load-image "res/sprites/chandelier.gif") 4)
    })
 
 (defn init-state []
@@ -33,15 +33,15 @@
 
    :pressed-keys []
 
-   :font (q/create-font "Volter__28Goldfish_29.ttf" 12 false)
-   :textures {:grass (q/load-image "floor.png")
-              :stone (q/load-image "stone1.png")
-              :brick (q/load-image "wall.png")
-              :carpet (q/load-image "carpet.png")
-              :planks (q/load-image "ceiling.png")
+   :font (q/create-font "res/fonts/Volter__28Goldfish_29.ttf" 12 false)
+   :textures {:grass (q/load-image "res/tiles/floor.png")
+              :stone (q/load-image "res/tiles/stone1.png")
+              :brick (q/load-image "res/tiles/wall.png")
+              :carpet (q/load-image "res/tiles/carpet.png")
+              :planks (q/load-image "res/tiles/ceiling.png")
               }
 
-   :sky-texture (q/load-image "moon.png")
+   :sky-texture (q/load-image "res/domes/moon.png")
 
    ; set some sprites
    :sprites (load-sprites (q/load-image "world1.png") (sprite-map))
