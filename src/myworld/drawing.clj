@@ -31,15 +31,6 @@
               )
          (range (* ratio height)))))
 
-;(defn draw-sprite-stripe!
-;  [img x-offset ratio distance column-index]
-;  (let [height (:height img)
-;        line (sprite-get-stripe img column-index)
-;        ]
-;    (q/resize line PIXEL (* ratio height PIXEL))
-;    )
-;  )
-
 (defn get-wall-endpoints
   "top and bottom Y coordinate of the wall, centered in available space"
   [max-height wall-height midpoint]
@@ -48,12 +39,6 @@
         offset (/ (- max-height wall-height) 2.0)
         ]
     [start end]))
-
-
-
-(defn- tex-mapper [tex-height wall-height]
-  (fn [wall-y] (/ (* wall-y tex-height) wall-height)))
-
 
 (defn get-floor-color [floor-map textures playerx playery fx fy]
   (let [dist (q/dist fx fy playerx playery)
@@ -65,18 +50,20 @@
         texcolor (q/get-pixel tex (cmap fx) (cmap fy))
         ]
     (distance-blend texcolor dist)
-    ;texcolor
     ))
 
-; (get-dome-line sky-texture midpoint top (+ Math/PI angle))
-(defn draw-dome-stripe! [tex midpoint height angle column-index]
+(defn draw-dome-stripe!
+  "Draw dome texture above wall"
+  [tex midpoint height angle column-index]
   (let [x-offset (mod (* 120 angle) 720)
         y-offset (- 120 midpoint)
         line (q/get-pixel tex x-offset y-offset 1 (inc height))]
     ;(q/resize line 0 height)
     (q/image line column-index 0)))
 
-(defn draw-wall-stripe! [tex x-offset x y height distance]
+(defn draw-wall-stripe!
+  "Draw the wall part of the screen slice"
+  [tex x-offset x y height distance]
   (let [line (q/get-pixel tex x-offset 0 1 64)
         ratio (/ (inc height) 64.0)
         xpos x
@@ -84,7 +71,6 @@
         ysize (inc height)
         dark (q/map-range distance 0 500 0 255)
         ]
-    ;(q/resize line 1 ysize)
     (q/push-matrix)
     (q/scale 1 ratio)
     (q/image line xpos (/ ypos ratio))
@@ -163,15 +149,6 @@
                        x-tex column-index start wall-height distance)
     ))
 
-(defn draw-square
-  [line, column, color]
-  (let [S UNIT
-        m #(* S %1)]
-    (q/stroke (q/color 0 0 0))
-    (q/fill color)
-    (q/rect (m column) (m line) S S)
-    ))
-
 (defn draw-sprite!
   [{:keys [x y frustum rot midpoint] :as state}
    z-buf
@@ -200,6 +177,14 @@
     (q/pop-matrix)))
 
 
+(defn draw-square
+  [line, column, color]
+  (let [S UNIT
+        m #(* S %1)]
+    (q/stroke (q/color 0 0 0))
+    (q/fill color)
+    (q/rect (m column) (m line) S S)
+    ))
 
 (defn draw-minimap
   [{:keys [world frustum rot x y] :as state}]
