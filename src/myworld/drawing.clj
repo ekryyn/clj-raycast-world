@@ -40,12 +40,12 @@
         ]
     [start end]))
 
-(defn get-floor-color [floor-map textures playerx playery fx fy]
+(defn get-floor-color [floor-map tiles playerx playery fx fy]
   (let [dist (q/dist fx fy playerx playery)
         c (q/floor  (/ fx UNIT))
         r (q/floor  (/ fy UNIT))
         tex-type (world-cell floor-map r c)
-        tex (tex-type textures)
+        tex (:texture (get tiles tex-type))
         cmap #(mod % 64)
         texcolor (q/get-pixel tex (cmap fx) (cmap fy))
         ]
@@ -109,7 +109,7 @@
     ))
 
 (defn draw-floor!
-  [{:keys [frustum player-height rot midpoint floors textures] :as state}
+  [{:keys [frustum player-height rot midpoint floors tiles] :as state}
    column-index angle y-start y-end
    ]
   (let [
@@ -121,13 +121,13 @@
                             (rotate-vector (- rot))
                             (add-vector [(:x state) (:y state)]))
                       (range y-start y-end))
-    floor (map #(apply get-floor-color floors textures (:x state) (:y state) %)
+    floor (map #(apply get-floor-color floors tiles (:x state) (:y state) %)
               floor-points)]
     (draw-vertical-line! column-index floor y-start)
     ))
 
 (defn draw-stripe!
-  [{:keys [rot textures sky-texture floors ceilings
+  [{:keys [rot tiles sky-texture floors ceilings
            player-height world] :as state}
    {:keys [distance frustum hit-direction x y angle] :as cast-result}
    column-index]
@@ -140,9 +140,8 @@
      [start end] (get-wall-endpoints height wall-height midpoint)
      top (max start 0)
      bottom (min end height)
-     wall-texture ((:wall-type cast-result) textures)
-     ]
-    (draw-floor! state column-index angle (dec bottom) height)
+     wall-texture (:texture (get tiles (:wall-type cast-result)))]
+     (draw-floor! state column-index angle (dec bottom) height)
     ;(draw-ceiling! state column-index angle 0 (inc top))
     (draw-dome-stripe! sky-texture midpoint top angle column-index)
     (draw-wall-stripe! wall-texture

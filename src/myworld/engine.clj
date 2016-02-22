@@ -15,12 +15,16 @@
       (- angle pipi)
       angle)))
 
-(defn world-cell [{:keys [width grid length]} l c]
-  (let [l (max l 0)
+(defn is-door? [{:keys [door?] :as tile-types} wall-type-id]
+  (true? door?))
+
+(defn world-cell [{:keys [width data height]} l c]
+  (let [length (* width height)
+        l (max l 0)
         c (max c 0)
         i (+ c (* width l))
         i (max 0 i)
-        i (min i (dec length))] (nth grid i)))
+        i (min i (dec length))] (nth data i)))
 
 (defn focal-dist
   [{:keys [fov width height]}]
@@ -40,7 +44,7 @@
         r (q/floor (/ y UNIT))]
     (if (in-world? world x y)
       (world-cell world r c)
-      :brick)
+      1)
     ))
 
 (defn wall?
@@ -49,7 +53,7 @@
   (let [c (q/floor (/ x UNIT))
         r (q/floor (/ y UNIT))]
     (or (not (in-world? world x y))
-        (not= (world-cell world r c) :none))))
+        (> (world-cell world r c) 0))))
 
 (defn- next-horiz-hit
   [x y angle world]

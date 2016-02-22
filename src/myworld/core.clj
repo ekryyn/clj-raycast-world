@@ -8,6 +8,7 @@
      'myworld.drawing
      'myworld.sprite
      'myworld.utils
+     'myworld.maploader
      )
 
 
@@ -26,46 +27,46 @@
    })
 
 (defn init-state []
-  {; Surface to draw projection :
-   ; frustum for projection
-   :frustum default-frustum
-   :midpoint-ratio 0.5
+  (let
+    [world-map (read-map "castle.json")
+     textures (tile-textures world-map)]
+    {
+     ; Surface to draw projection :
+     ; frustum for projection
+     :frustum default-frustum
+     :midpoint-ratio 0.5
 
-   :pressed-keys []
+     :pressed-keys []
 
-   :font (q/create-font "res/fonts/Volter__28Goldfish_29.ttf" 12 false)
-   :textures {:grass (q/load-image "res/tiles/floor.png")
-              :stone (q/load-image "res/tiles/stone1.png")
-              :brick (q/load-image "res/tiles/wall.png")
-              :stone-wall (q/load-image "res/tiles/stone-wall.png")
-              :window-wall (q/load-image "res/tiles/window-wall.png")
-              :carpet (q/load-image "res/tiles/carpet.png")
-              :planks (q/load-image "res/tiles/ceiling.png")}
+     :font (q/create-font "res/fonts/Volter__28Goldfish_29.ttf" 12 false)
 
-   :sky-texture (q/load-image "res/domes/moon.png")
+     :sky-texture (q/load-image "res/domes/moon.png")
 
-   ; set some sprites
-   :sprites (load-sprites (q/load-image "world1.png") (sprite-map))
-   ; :sprites
-   ; [
-   ;  (assoc (:bush (sprite-map)) :x 960 :y 96)
-   ;  (assoc (:bush (sprite-map)) :x 800 :y 96)
-   ;
-   ;  ]
+     :textures textures
+     :tiles (world-tiles world-map textures)
 
-   :world (load-wall-map (q/load-image "world1.png"))
-   :floors (load-floor-map (q/load-image "world1-floor.png"))
-   :ceilings (load-ceiling-map (q/load-image "world1-ceiling.png"))
+     ; set some sprites
+     :sprites (load-sprites (q/load-image "world1.png") (sprite-map))
+     ; :sprites
+     ; [
+     ;  (assoc (:bush (sprite-map)) :x 960 :y 96)
+     ;  (assoc (:bush (sprite-map)) :x 800 :y 96)
+     ;
+     ;  ]
 
-   :last-frame 0
+     :world (get-world-layer world-map "walls")
+     :floors (get-world-layer world-map "floor")
+     :ceilings (load-ceiling-map (q/load-image "world1-ceiling.png"))
 
-   :dialogue (create-dialogue "Salut les connards !")
+     :last-frame 0
 
-   ; player position :
-   :player-height (/ UNIT 2)
-   :x 736, :y 1000
-   :rot 0
-   })
+     :dialogue (create-dialogue "Salut les connards !")
+
+     ; player position :
+     :player-height (/ UNIT 2)
+     :x 200, :y 200
+     :rot 0
+   }))
 
 (defn setup []
   (q/frame-rate 60)
