@@ -24,8 +24,8 @@
 
 (defn focal-dist
   [{:keys [fov width height]}]
-  (let [angle (/ fov 2)]
-    (/ (/ width 2) (q/tan angle))))
+  (let [angle (/ fov 2.0)]
+    (/ (/ width 2.0) (q/tan angle))))
 
 (defn in-world? [world x y]
   "is (x,y) in world boundaries ?"
@@ -33,13 +33,23 @@
     (< 0 x (world-width world))
     (< 0 y (world-height world))))
 
+(defn wall-type
+  "is (x,y) a wall ?"
+  [world x y]
+  (let [c (q/floor (/ x UNIT))
+        r (q/floor (/ y UNIT))]
+    (if (in-world? world x y)
+      (world-cell world r c)
+      :brick)
+    ))
+
 (defn wall?
   "is (x,y) a wall ?"
   [world x y]
   (let [c (q/floor (/ x UNIT))
         r (q/floor (/ y UNIT))]
     (or (not (in-world? world x y))
-        (not= (world-cell world r c) 0))))
+        (not= (world-cell world r c) :none))))
 
 (defn- next-horiz-hit
   [x y angle world]
@@ -58,7 +68,7 @@
       [Ax Ax
        Ay Ay]
       (if (wall? world Ax Ay)
-          [Ax Ay :horizontal]
+          [Ax Ay :horizontal (wall-type world Ax Ay)]
           (recur (+ Ax Xa) (+ Ay Ya)))
       )))
 
@@ -66,7 +76,7 @@
   [x y angle world]
   (let
     [a angle
-     half-pi (/ Math/PI 2)
+     half-pi (/ Math/PI 2.0)
      tan-a (q/tan a)
      Xa (if (< (- half-pi) angle half-pi) UNIT (- UNIT))
      Ya (* Xa (q/tan (- a)))]
@@ -76,7 +86,7 @@
             (- (* (q/floor (/ x UNIT)) UNIT) 1))
        By (+ y (* (- x Bx) (q/tan a)))]
       (if (wall? world Bx By)
-          [Bx By :vertical]
+          [Bx By :vertical (wall-type world Bx By)]
           (recur (+ Bx Xa) (+ By Ya)))
       )))
 
@@ -90,7 +100,7 @@
       (and check-horiz? check-vert?)
       (let [hit-h (next-horiz-hit x y angle world)
             hit-v (next-vert-hit x y angle world)]
-        (min-key (fn [[px py _]]  (q/dist x y px py)) hit-v hit-h))
+        (min-key (fn [[px py _ _]]  (q/dist x y px py)) hit-v hit-h))
       check-horiz? (next-horiz-hit x y angle world)
       check-vert? (next-vert-hit x y angle world)
       )))
@@ -99,9 +109,9 @@
 (defn proj-angles
   "Get angles (in radians) of rays to cast from current view"
   [rot fov width]
-  (let [step (/ fov width)]
+  (let [step (/ fov (float width))]
     (loop [column 0
-           angle (- rot (/ fov 2))
+           angle (- rot (/ fov 2.0))
            res []]
       (if (< column width)
           (recur (inc column)
@@ -113,13 +123,14 @@
 (defn ray-cast
   [{:keys [frustum world x y rot]} angle]
   (let  ;; as a toy, we assume wall at 200 everywhere
-    [[wx wy hit-dir] (next-wall x y angle world)
+    [[wx wy hit-dir wtype] (next-wall x y angle world)
      dist (q/dist x y wx wy)]
     {
      :distance (* dist (q/cos (- angle rot))); we'll use above later
      :angle angle
      :x wx, :y wy
      :hit-direction hit-dir
+     :wall-type wtype
      :frustum frustum ; keep the frustum used to case
      }))
 
@@ -149,7 +160,7 @@
   (let [a angle
         focal (focal-dist frustum)
         distance-to-half-screen (* focal (q/tan a))
-        distance (- (/ width 2) distance-to-half-screen)]
+        distance (- (/ width 2.0) distance-to-half-screen)]
     distance))
 
 (defn sprite-angle [rot player-x player-y sprite-x sprite-y]
@@ -162,7 +173,7 @@
   (let [angle (sprite-angle rot player-x player-y sprite-x sprite-y)
         extra (+ fov 0.35)
         ]
-    (<= (/ extra -2) angle (/ extra 2))))
+    (<= (/ extra -2.0) angle (/ extra 2.0))))
 
 
 (defn forward-vector

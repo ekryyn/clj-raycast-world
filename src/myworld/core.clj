@@ -37,9 +37,10 @@
    :textures {:grass (q/load-image "res/tiles/floor.png")
               :stone (q/load-image "res/tiles/stone1.png")
               :brick (q/load-image "res/tiles/wall.png")
+              :stone-wall (q/load-image "res/tiles/stone-wall.png")
+              :window-wall (q/load-image "res/tiles/window-wall.png")
               :carpet (q/load-image "res/tiles/carpet.png")
-              :planks (q/load-image "res/tiles/ceiling.png")
-              }
+              :planks (q/load-image "res/tiles/ceiling.png")}
 
    :sky-texture (q/load-image "res/domes/moon.png")
 
@@ -73,7 +74,7 @@
 
 (defn- move-player! [state direction]
   (let
-    [speed (if (= :up direction) (/ UNIT 5) (/ UNIT -5))
+    [speed (if (= :up direction) (/ UNIT 5.0) (/ UNIT -5.0))
      [dx dy] (forward-vector state speed)]
     (-> state (update :x + dx) (update :y + dy))))
 
@@ -148,8 +149,8 @@
        ; reset point of view, will move when animated
        ((fn [s] (assoc s
                        :walking? false
-                       :midpoint (/ (:height frustum) 2)
-                       :player-height (/ UNIT 2))))
+                       :midpoint (/ (:height frustum) 2.0)
+                       :player-height (/ UNIT 2.0))))
        ; process actions
        (play-dialogue)
        (look-up-an-down!)

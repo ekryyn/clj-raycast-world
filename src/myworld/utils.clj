@@ -6,7 +6,9 @@
   (let [red (int (q/red color))]
     (case red
       0 :brick
-      0)))
+      222 :window-wall
+      200 :stone-wall
+      :none)))
 
 (defn color-to-floor-type [x y color]
   (let [red (int (q/red color))]

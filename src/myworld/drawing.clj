@@ -43,9 +43,9 @@
 (defn get-wall-endpoints
   "top and bottom Y coordinate of the wall, centered in available space"
   [max-height wall-height midpoint]
-  (let [start (- midpoint (/ wall-height 2))
+  (let [start (- midpoint (/ wall-height 2.0))
         end (+ start wall-height)
-        offset (/ (- max-height wall-height) 2)
+        offset (/ (- max-height wall-height) 2.0)
         ]
     [start end]))
 
@@ -78,7 +78,7 @@
 
 (defn draw-wall-stripe! [tex x-offset x y height distance]
   (let [line (q/get-pixel tex x-offset 0 1 64)
-        ratio (/ (inc height) 64)
+        ratio (/ (inc height) 64.0)
         xpos x
         ypos y
         ysize (inc height)
@@ -142,7 +142,7 @@
 
 (defn draw-stripe!
   [{:keys [rot textures sky-texture floors ceilings
-           player-height] :as state}
+           player-height world] :as state}
    {:keys [distance frustum hit-direction x y angle] :as cast-result}
    column-index]
   (let
@@ -154,11 +154,12 @@
      [start end] (get-wall-endpoints height wall-height midpoint)
      top (max start 0)
      bottom (min end height)
+     wall-texture ((:wall-type cast-result) textures)
      ]
     (draw-floor! state column-index angle (dec bottom) height)
     ;(draw-ceiling! state column-index angle 0 (inc top))
     (draw-dome-stripe! sky-texture midpoint top angle column-index)
-    (draw-wall-stripe! (:brick textures)
+    (draw-wall-stripe! wall-texture
                        x-tex column-index start wall-height distance)
     ))
 
@@ -182,9 +183,9 @@
         ratio (/ focal sp-dist)
         sp-height (:height sprite)
         sp-width (:width sprite)
-        pos-x (- (sprite-screen-x frustum angle) (/ (* sp-width ratio) 2))
-        off-floor (/ (- UNIT sp-height) 2)
-        pos-y (+ (* ratio off-floor) (- midpoint (/ (* ratio sp-height) 2)))
+        pos-x (- (sprite-screen-x frustum angle) (/ (* sp-width ratio) 2.0))
+        off-floor (/ (- UNIT sp-height) 2.0)
+        pos-y (+ (* ratio off-floor) (- midpoint (/ (* ratio sp-height) 2.0)))
         frame (sprite-get-frame sprite)]
     (q/push-matrix)
     (q/scale 1 ratio)
