@@ -72,17 +72,17 @@
   (q/color-mode :rgb)
   (init-state))
 
-(defn- move-player! [state direction]
+(defn- move-player [state direction]
   (let
     [speed (if (= :up direction) (/ UNIT 5.0) (/ UNIT -5.0))
      [dx dy] (forward-vector state speed)]
     (-> state (update :x + dx) (update :y + dy))))
 
 
-(defn move! [{:keys [pressed-keys] :as state}]
+(defn move [{:keys [pressed-keys] :as state}]
   (if-let [dir (first (filter #{:up :down} pressed-keys))]
     (-> state
-        (move-player! dir)
+        (move-player dir)
         (assoc :walking? true)
         )
     state))
@@ -92,7 +92,7 @@
       (update :rot + delta)
       (update :rot normalize-angle)))
 
-(defn rotate! [{:keys [pressed-keys] :as state}]
+(defn rotate [{:keys [pressed-keys] :as state}]
   (cond
     (some #{:left} pressed-keys) (rotate-and-normalize state 0.2)
     (some #{:right} pressed-keys) (rotate-and-normalize state -0.2)
@@ -104,7 +104,8 @@
       (update :midpoint + offset)
     ))
 
-(defn walk-head! [state]
+(defn walk-head
+  [state]
   (if (:walking? state)
     (let [seconds (q/floor (* 0.015 (q/millis)))
           offset (* 1.7 (q/sin seconds))]
@@ -112,24 +113,29 @@
     state
     ))
 
-(defn jump-and-crouch! [{:keys [pressed-keys] :as state}]
+(defn jump-and-crouch
+  [{:keys [pressed-keys] :as state}]
   (if (some #{:a :z} pressed-keys)
     (let [offset (if (some #{:a} pressed-keys) 50 -50)]
       (lift-player state offset))
     state)
   )
 
-(defn look-up-an-down! [{:keys [pressed-keys] :as state}]
+(defn look-up-an-down
+  [{:keys [pressed-keys] :as state}]
   (if (some #{:w :s} pressed-keys)
     (update state :midpoint * (if (some #{:w} pressed-keys) 1.5 0.5))
     state))
 
-(defn animate-sprites [{:keys [sprites] :as state}]
+(defn animate-sprites
+  "Update animated sprites frame"
+  [{:keys [sprites] :as state}]
   (assoc state
          :sprites (map #(sprite-update-time % (* 0.001 (q/millis)))
                        sprites)))
 
 (defn play-dialogue
+  "Update state of current dialogue box"
   [{:keys [dialogue] :as state}]
   (if (nil? dialogue)
     state
@@ -153,20 +159,24 @@
                        :player-height (/ UNIT 2.0))))
        ; process actions
        (play-dialogue)
-       (look-up-an-down!)
-       (jump-and-crouch!)
-       (rotate!)
-       (move!)
-       (walk-head!)
+       (look-up-an-down)
+       (jump-and-crouch)
+       (rotate)
+       (move)
+       (walk-head)
        (animate-sprites)
        ))
 
 
-(defn mouse-moved [state event]
-  state
-  )
+(defn mouse-moved
+  "Handle mouse mouvement"
+  [state event]
+  state)
 
-(defn key-pressed [state event]
+(defn key-pressed
+  "When a key is pressed, process optionnal actions and
+  add that key to a register until it's released"
+  [state event]
   (let [k (:key event)]
     ;(println k)
     (if (= (name k) " ")
@@ -174,6 +184,10 @@
       (update state :pressed-keys conj k))
     ))
 
+(defn key-released
+  "When a key is release, remove it from key register"
+  [{:keys [pressed-keys] :as state}]
+  (assoc state :pressed-keys (vec (remove (fn [k] (= k (q/key-as-keyword))) pressed-keys))))
 
 (defn draw-state
   [{:keys [world frustum rot x y mouse-x mouse-y sprites] :as state}]
@@ -189,36 +203,32 @@
         z-buf (map #(:distance %) cast-results)
         visible-pred #(sprite-visible? rot x y %1 %2 fov)
         visible-sprites (filter #(visible-pred (:x %) (:y %)) sprites)]
+    (q/no-stroke)
     (q/push-matrix)
     (q/scale 4)
-    (doseq [[index cr] (enumerate cast-results)
-            ;:let [line (line-colors state cr)]
-            ]
-      ;(draw-vertical-line! index line)
-      (draw-stripe! state cr index)
-      )
-    (q/no-stroke)
+    ; first draw the map
+    (doseq [[index cr] (enumerate cast-results)]
+      (draw-stripe! state cr index))
+    ; draw sprites on top of the world
     (doseq [sprite
             (reverse (sort-by #(q/dist x y (:x %1) (:y %1)) visible-sprites))]
       (draw-sprite! state z-buf sprite))
+    ; temporary solution for dialogues:
     (if (:dialogue state)
       (do
         (q/text-size 8)
         (q/fill 255)
         (q/text (-> state (:dialogue) (:display-text)) 10 100)))
     (q/pop-matrix)
+
+    ; FPS counter
     (q/text-size 24)
     (q/fill (q/color 0 255 255))
     (q/text (str (format "%.2f" (/ 1.0 (* 0.001 (- (q/millis) start)))) " FPS")
-            10 30)
-    ; (q/text (str "pos: " x ", " y) 10 60)
-    )
+            10 30))
   (draw-hud)
-  ; (draw-minimap state)
 )
 
-(defn key-released [{:keys [pressed-keys] :as state}]
-  (assoc state :pressed-keys (vec (remove (fn [k] (= k (q/key-as-keyword))) pressed-keys))))
 
 (defn -main [& args] (q/sketch
   :title "You spin my circle right round"
