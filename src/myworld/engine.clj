@@ -6,7 +6,7 @@
 (defn world-height [{:keys [height]}] (* UNIT height))
 
 (defn enumerate [coll]
-  (map vector (iterate inc 0) coll)  )
+  (map vector (iterate inc 0) coll))
 
 (defn normalize-angle [angle]
   (let [pipi (* 2 Math/PI)
@@ -150,14 +150,22 @@
 
 (defn floor-caster
   "cast of the floor, returns vector [dx, dy]"
-  [focal player-height beta]
+  [floor-map focal player-height beta player-x player-y rot]
   (fn [py]
     (let [b beta
           straight (/ (* player-height focal) py)
           distance (/ straight (q/cos b))
           dx (* straight (q/tan b))
-          dy straight]
-       [dy (- dx)])))
+          dy straight
+          v (rotate-vector (- rot) [dy (- dx)])
+          [fx fy] (add-vector [player-x player-y] v)
+          c (q/floor  (/ fx UNIT))
+          r (q/floor  (/ fy UNIT))]
+       {:floor-type (world-cell floor-map r c)
+        :fx fx
+        :fy fy
+        :distance distance
+        })))
 
 (defn sprite-screen-x
   [{:keys [fov width] :as frustum} angle]

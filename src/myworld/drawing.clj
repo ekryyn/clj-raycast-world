@@ -40,17 +40,24 @@
         ]
     [start end]))
 
-(defn get-floor-color [floor-map tiles playerx playery fx fy]
-  (let [dist (q/dist fx fy playerx playery)
-        c (q/floor  (/ fx UNIT))
-        r (q/floor  (/ fy UNIT))
-        tex-type (world-cell floor-map r c)
-        tex (:texture (get tiles tex-type))
-        cmap #(mod % 64)
-        texcolor (q/get-pixel tex (cmap fx) (cmap fy))
-        ]
-    (distance-blend texcolor dist)
-    ))
+(defn draw-floor-point! [tex {:keys [fx fy distance]} x y]
+  (let [cmap #(mod % 64)
+        texcolor (q/get-pixel tex (cmap fx) (cmap fy))]
+    (q/fill (distance-blend texcolor distance))
+    (q/rect x y 1 1)))
+
+(defn draw-dome-point!
+  "Draw dome texture above wall"
+  [tex midpoint angle x y]
+  (let [x-offset (mod (* 120 angle) 720) ; offset in texture
+        y-offset (- 120 midpoint)
+        point (q/get-pixel tex x-offset (+ y-offset y))]
+    ;(q/resize line 0 height)
+    ;(q/image line column-index 0)
+    (q/fill point)
+    (q/rect x y 1 1)
+    )
+  )
 
 (defn draw-dome-stripe!
   "Draw dome texture above wall"
@@ -91,21 +98,29 @@
        (draw-rect x (+ y y-offset))))))
 
 (defn draw-ceiling!
-  [{:keys [frustum player-height rot midpoint ceilings textures] :as state}
+  [{:keys [frustum player-height rot midpoint
+           ceilings tiles sky-texture] :as state}
    column-index angle y-start y-end
    ]
   (let [
     focal (focal-dist frustum)
-    floor-cast (floor-caster focal (- UNIT player-height) (- angle rot))
+    player-x (:x state)
+    player-y (:y state)
+    floor-cast (floor-caster
+                 ceilings focal
+                 (- UNIT player-height) (- angle rot) player-x player-y rot)
     floor-points (map #(->> %1
                             (- midpoint)
-                            (floor-cast)
-                            (rotate-vector (- rot))
-                            (add-vector [(:x state) (:y state)]))
-                      (range y-start y-end))
-    floor (map #(apply get-floor-color ceilings textures (:x state) (:y state) %)
-              floor-points)]
-    (draw-vertical-line! column-index floor y-start)
+                            (floor-cast))
+                      (range y-start y-end))]
+    (doseq [[offset-y fp] (enumerate floor-points)
+            :let [floor-type (:floor-type fp)
+                  tex (:texture (get tiles floor-type))]]
+      (if (> floor-type 0) 
+        (draw-floor-point! tex fp column-index (+ y-start offset-y))
+        (draw-dome-point!
+          sky-texture midpoint angle column-index (+ y-start offset-y))
+        ))
     ))
 
 (defn draw-floor!
@@ -114,16 +129,20 @@
    ]
   (let [
     focal (focal-dist frustum)
-    floor-cast (floor-caster focal player-height (- angle rot))
+    player-x (:x state)
+    player-y (:y state)
+    floor-cast (floor-caster
+                 floors focal player-height (- angle rot) player-x player-y rot)
     floor-points (map #(->> %1
                             (+ (- midpoint))
-                            (floor-cast)
-                            (rotate-vector (- rot))
-                            (add-vector [(:x state) (:y state)]))
-                      (range y-start y-end))
-    floor (map #(apply get-floor-color floors tiles (:x state) (:y state) %)
-              floor-points)]
-    (draw-vertical-line! column-index floor y-start)
+                            (floor-cast))
+                      (range y-start y-end))]
+    (doseq [[offset-y fp] (enumerate floor-points)
+            :let [tex (:texture (get tiles (:floor-type fp)))]]
+      (draw-floor-point! tex fp column-index (+ y-start offset-y)))
+    ;floor (map #(get-floor-color floors tiles %)
+     ;         floor-points)]
+    ;(draw-vertical-line! column-index floor y-start)
     ))
 
 (defn draw-stripe!
@@ -142,8 +161,8 @@
      bottom (min end height)
      wall-texture (:texture (get tiles (:wall-type cast-result)))]
      (draw-floor! state column-index angle (dec bottom) height)
-    ;(draw-ceiling! state column-index angle 0 (inc top))
-    (draw-dome-stripe! sky-texture midpoint top angle column-index)
+    (draw-ceiling! state column-index angle 0 (inc top))
+    ;(draw-dome-stripe! sky-texture midpoint top angle column-index)
     (draw-wall-stripe! wall-texture
                        x-tex column-index start wall-height distance)
     ))

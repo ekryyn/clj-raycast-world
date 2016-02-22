@@ -56,7 +56,8 @@
 
      :world (get-world-layer world-map "walls")
      :floors (get-world-layer world-map "floor")
-     :ceilings (load-ceiling-map (q/load-image "world1-ceiling.png"))
+     :ceilings (get-world-layer world-map "ceiling")
+     ;:ceilings (load-ceiling-map (q/load-image "world1-ceiling.png"))
 
      :last-frame 0
 
