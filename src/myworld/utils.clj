@@ -1,6 +1,7 @@
-(ns myworld.utils (:require [quil.core :as q]))
-
-(use 'myworld.engine)
+(ns myworld.utils
+  (:require [quil.core :as q]
+            [myworld.engine :refer :all]
+            ))
 
 (defn color-to-wall-type [x y color]
   (let [red (int (q/red color))]

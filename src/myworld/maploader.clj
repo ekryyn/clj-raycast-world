@@ -1,8 +1,8 @@
 (ns myworld.maploader
   (:require [clojure.data.json :as json]
-            [quil.core :as q]))
-
-(use 'myworld.sprite)
+            [quil.core :as q]
+            [myworld.sprite :refer :all]
+            ))
 
 (def map-location "res/maps/")
 

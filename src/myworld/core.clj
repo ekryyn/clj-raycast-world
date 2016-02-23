@@ -2,21 +2,18 @@
   (:gen-class)
   (:require [quil.core :as q]
             [quil.middleware :as m]
+            [myworld.drawing :refer :all]
+            [myworld.engine :refer :all]
+            [myworld.maploader :refer :all]
+            [myworld.sprite :refer :all]
+            [myworld.utils :refer :all]
             ))
-
-(use 'myworld.engine
-     'myworld.drawing
-     'myworld.sprite
-     'myworld.utils
-     'myworld.maploader
-     )
-
 
 (def default-frustum
   "Projection attributes"
-  {:fov (q/radians 60) ,
-   :width 190,
-   :height 120})
+  {:fov (q/radians 60)
+   :width 152
+   :height 96})
 
 (defn create-sprite-map []
   {:princess (create-sprite (q/load-image "res/sprites/princess.gif") 4)
@@ -211,7 +208,7 @@
         visible-sprites (filter #(visible-pred (:x %) (:y %)) sprites)]
     (q/no-stroke)
     (q/push-matrix)
-    (q/scale 4)
+    (q/scale 5)
     ; first draw the map
     (doseq [[index cr] (enumerate cast-results)]
       (draw-stripe! state cr index))

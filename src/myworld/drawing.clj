@@ -1,8 +1,9 @@
-(ns myworld.drawing (:require [quil.core :as q]))
-
-(use 'myworld.utils)
-(use 'myworld.engine)
-(use 'myworld.sprite)
+(ns myworld.drawing
+  (:require [quil.core :as q]
+            [myworld.engine :refer :all]
+            [myworld.sprite :refer :all]
+            [myworld.utils :refer :all]
+            ))
 
 
 (defn- distance-blend [color distance]
