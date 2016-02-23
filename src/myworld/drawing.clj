@@ -1,8 +1,8 @@
 (ns myworld.drawing
   (:require [quil.core :as q]
-            [myworld.engine :refer :all]
-            [myworld.sprite :refer :all]
-            [myworld.utils :refer :all]
+            [myworld.engine :as engine :refer [UNIT]]
+            [myworld.sprite :as sprite]
+            [myworld.utils :as u]
             ))
 
 
@@ -27,7 +27,7 @@
         y-mapper (fn [y] (q/map-range y 0 (* height ratio) 0 height))]
     (map #(-> %
               (y-mapper)
-              ((fn [y] (sprite-get-pixel img x-offset y)))
+              ((fn [y] (sprite/sprite-get-pixel img x-offset y)))
               (distance-blend distance)
               )
          (range (* ratio height)))))
@@ -104,20 +104,20 @@
    column-index angle y-start y-end
    ]
   (let [
-    focal (focal-dist frustum)
+    focal (engine/focal-dist frustum)
     player-x (:x state)
     player-y (:y state)
-    floor-cast (floor-caster
+    floor-cast (engine/floor-caster
                  ceilings focal
                  (- UNIT player-height) (- angle rot) player-x player-y rot)
     floor-points (map #(->> %1
                             (- midpoint)
                             (floor-cast))
                       (range y-start y-end))]
-    (doseq [[offset-y fp] (enumerate floor-points)
+    (doseq [[offset-y fp] (engine/enumerate floor-points)
             :let [floor-type (:floor-type fp)
                   tex (:texture (get tiles floor-type))]]
-      (if (> floor-type 0) 
+      (if (> floor-type 0)
         (draw-floor-point! tex fp column-index (+ y-start offset-y))
         (draw-dome-point!
           sky-texture midpoint angle column-index (+ y-start offset-y))
@@ -129,16 +129,16 @@
    column-index angle y-start y-end
    ]
   (let [
-    focal (focal-dist frustum)
+    focal (engine/focal-dist frustum)
     player-x (:x state)
     player-y (:y state)
-    floor-cast (floor-caster
+    floor-cast (engine/floor-caster
                  floors focal player-height (- angle rot) player-x player-y rot)
     floor-points (map #(->> %1
                             (+ (- midpoint))
                             (floor-cast))
                       (range y-start y-end))]
-    (doseq [[offset-y fp] (enumerate floor-points)
+    (doseq [[offset-y fp] (engine/enumerate floor-points)
             :let [tex (:texture (get tiles (:floor-type fp)))]]
       (draw-floor-point! tex fp column-index (+ y-start offset-y)))
     ;floor (map #(get-floor-color floors tiles %)
@@ -152,7 +152,7 @@
    {:keys [distance frustum hit-direction x y angle] :as cast-result}
    column-index]
   (let
-    [focal (focal-dist frustum)
+    [focal (engine/focal-dist frustum)
      wall-height (* (/ UNIT distance) focal)
      height (:height frustum)
      x-tex (if (= hit-direction :horizontal) (mod x 64) (mod y 64))
@@ -173,16 +173,16 @@
    z-buf
    sprite]
   (let [fov (:fov frustum)
-        focal (focal-dist frustum)
-        angle (sprite-angle rot x y (:x sprite) (:y sprite))
+        focal (engine/focal-dist frustum)
+        angle (engine/sprite-angle rot x y (:x sprite) (:y sprite))
         sp-dist (q/dist x y (:x sprite) (:y sprite))
         ratio (/ focal sp-dist)
         sp-height (:height sprite)
         sp-width (:width sprite)
-        pos-x (- (sprite-screen-x frustum angle) (/ (* sp-width ratio) 2.0))
+        pos-x (- (engine/sprite-screen-x frustum angle) (/ (* sp-width ratio) 2.0))
         off-floor (/ (- UNIT sp-height) 2.0)
         pos-y (+ (* ratio off-floor) (- midpoint (/ (* ratio sp-height) 2.0)))
-        frame (sprite-get-frame sprite)]
+        frame (sprite/sprite-get-frame sprite)]
     (q/push-matrix)
     (q/scale 1 ratio)
     (q/tint (q/map-range sp-dist 0 500 255 0))
@@ -209,20 +209,20 @@
   [{:keys [world frustum rot x y] :as state}]
   (q/background 120)
 
-  (doseq [l (range (/ (world-height world) UNIT))
-          c (range (/ (world-width world) UNIT))
+  (doseq [l (range (/ (engine/world-height world) UNIT))
+          c (range (/ (engine/world-width world) UNIT))
           :let
-          [color (if (wall? world (* UNIT c) (* UNIT l))
+          [color (if (engine/wall? world (* UNIT c) (* UNIT l))
                    (q/color 150)
                    (q/color 255)
                    )]]
       (draw-square l c color))
   (q/fill 0 255 255)
   (let [r 10, o (/ r 2)] (q/rect (- x o) (- y o) r r))
-  (let [[dx dy] (forward-vector state 55)]
+  (let [[dx dy] (engine/forward-vector state 55)]
     (q/line x y (+ dx x) (+ dy y))
     )
-  (let [cr (ray-cast state rot)
+  (let [cr (engine/ray-cast state rot)
         r 10, o (/ r 2)]
     (q/rect (- (:x cr) 0) (- (:y cr) o) r r)
     )

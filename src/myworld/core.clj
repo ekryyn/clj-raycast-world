@@ -2,12 +2,11 @@
   (:gen-class)
   (:require [quil.core :as q]
             [quil.middleware :as m]
-            [myworld.drawing :refer :all]
-            [myworld.engine :refer :all]
-            [myworld.maploader :refer :all]
-            [myworld.sprite :refer :all]
-            [myworld.utils :refer :all]
-            ))
+            [myworld.drawing :as drawing]
+            [myworld.engine :as engine :refer [UNIT]]
+            [myworld.maploader :as maploader]
+            [myworld.sprite :as sprite]
+            [myworld.utils :as u]))
 
 (def default-frustum
   "Projection attributes"
@@ -16,17 +15,17 @@
    :height 96})
 
 (defn create-sprite-map []
-  {:princess (create-sprite (q/load-image "res/sprites/princess.gif") 4)
-   :bush (create-sprite (q/load-image "res/sprites/bush.gif"))
-   :flower (create-sprite (q/load-image "res/sprites/flower.gif"))
-   :blue-flower (create-sprite (q/load-image "res/sprites/blue-flower.gif"))
-   :chandelier (create-sprite (q/load-image "res/sprites/chandelier.gif") 4)
+  {:princess (sprite/create-sprite (q/load-image "res/sprites/princess.gif") 4)
+   :bush (sprite/create-sprite (q/load-image "res/sprites/bush.gif"))
+   :flower (sprite/create-sprite (q/load-image "res/sprites/flower.gif"))
+   :blue-flower (sprite/create-sprite (q/load-image "res/sprites/blue-flower.gif"))
+   :chandelier (sprite/create-sprite (q/load-image "res/sprites/chandelier.gif") 4)
    })
 
 (defn init-state []
   (let
-    [world-map (read-map "castle.json")
-     textures (tile-textures world-map)
+    [world-map (maploader/read-map "castle.json")
+     textures (maploader/tile-textures world-map)
      sprite-map (create-sprite-map)
      ]
     {
@@ -42,11 +41,11 @@
      :sky-texture (q/load-image "res/domes/moon.png")
 
      :textures textures
-     :tiles (world-tiles world-map textures)
+     :tiles (maploader/world-tiles world-map textures)
 
      ; set some sprites
      ;:sprites (load-sprites (q/load-image "world1.png") (sprite-map))
-     :sprites (reduce concat (map #(get-world-sprites world-map sprite-map %)
+     :sprites (reduce concat (map #(maploader/get-world-sprites world-map sprite-map %)
                                   ["npc" "decoration"]))
      ; :sprites
      ; [
@@ -55,14 +54,14 @@
      ;
      ;  ]
 
-     :world (get-world-layer world-map "walls")
-     :floors (get-world-layer world-map "floor")
-     :ceilings (get-world-layer world-map "ceiling")
+     :world (maploader/get-world-layer world-map "walls")
+     :floors (maploader/get-world-layer world-map "floor")
+     :ceilings (maploader/get-world-layer world-map "ceiling")
      ;:ceilings (load-ceiling-map (q/load-image "world1-ceiling.png"))
 
      :last-frame 0
 
-     :dialogue (create-dialogue "Salut les connards !")
+     :dialogue (u/create-dialogue "Salut les connards !")
 
      ; player position :
      :player-height (/ UNIT 2)
@@ -78,7 +77,7 @@
 (defn- move-player [state direction]
   (let
     [speed (if (= :up direction) (/ UNIT 5.0) (/ UNIT -5.0))
-     [dx dy] (forward-vector state speed)]
+     [dx dy] (engine/forward-vector state speed)]
     (-> state (update :x + dx) (update :y + dy))))
 
 
@@ -93,7 +92,7 @@
 (defn- rotate-and-normalize [state delta]
   (-> state
       (update :rot + delta)
-      (update :rot normalize-angle)))
+      (update :rot engine/normalize-angle)))
 
 (defn rotate [{:keys [pressed-keys] :as state}]
   (cond
@@ -134,7 +133,7 @@
   "Update animated sprites frame"
   [{:keys [sprites] :as state}]
   (assoc state
-         :sprites (map #(sprite-update-time % (* 0.001 (q/millis)))
+         :sprites (map #(sprite/sprite-update-time % (* 0.001 (q/millis)))
                        sprites)))
 
 (defn play-dialogue
@@ -142,14 +141,14 @@
   [{:keys [dialogue] :as state}]
   (if (nil? dialogue)
     state
-    (assoc state :dialogue (dialogue-step-letter dialogue (q/millis) 200))
+    (assoc state :dialogue (u/dialogue-step-letter dialogue (q/millis) 200))
     )
   )
 
 (defn player-action
   "handle main (space bar) action"
   [state]
-  (assoc state :dialogue (create-dialogue "Bonjour, je suis vraiment heureux !"))
+  (assoc state :dialogue (u/create-dialogue "Bonjour, je suis vraiment heureux !"))
   )
 
 (defn update-state
@@ -201,21 +200,21 @@
 
   (let [start (q/millis)
         fov (:fov frustum)
-        angles (proj-angles rot (:fov frustum) (:width frustum))
-        cast-results (map #(ray-cast state %) angles)
+        angles (engine/proj-angles rot (:fov frustum) (:width frustum))
+        cast-results (map #(engine/ray-cast state %) angles)
         z-buf (map #(:distance %) cast-results)
-        visible-pred #(sprite-visible? rot x y %1 %2 fov)
+        visible-pred #(engine/sprite-visible? rot x y %1 %2 fov)
         visible-sprites (filter #(visible-pred (:x %) (:y %)) sprites)]
     (q/no-stroke)
     (q/push-matrix)
     (q/scale 5)
     ; first draw the map
-    (doseq [[index cr] (enumerate cast-results)]
-      (draw-stripe! state cr index))
+    (doseq [[index cr] (engine/enumerate cast-results)]
+      (drawing/draw-stripe! state cr index))
     ; draw sprites on top of the world
     (doseq [sprite
             (reverse (sort-by #(q/dist x y (:x %1) (:y %1)) visible-sprites))]
-      (draw-sprite! state z-buf sprite))
+      (drawing/draw-sprite! state z-buf sprite))
     ; temporary solution for dialogues:
     (if (:dialogue state)
       (do
@@ -229,7 +228,7 @@
     (q/fill (q/color 0 255 255))
     (q/text (str (format "%.2f" (/ 1.0 (* 0.001 (- (q/millis) start)))) " FPS")
             10 30))
-  (draw-hud)
+  (drawing/draw-hud)
 )
 
 

@@ -1,6 +1,6 @@
 (ns myworld.utils
   (:require [quil.core :as q]
-            [myworld.engine :refer :all]
+            [myworld.engine :as engine :refer [UNIT]]
             ))
 
 (defn color-to-wall-type [x y color]
