@@ -18,7 +18,7 @@
    :width 190,
    :height 120})
 
-(defn sprite-map []
+(defn create-sprite-map []
   {:princess (create-sprite (q/load-image "res/sprites/princess.gif") 4)
    :bush (create-sprite (q/load-image "res/sprites/bush.gif"))
    :flower (create-sprite (q/load-image "res/sprites/flower.gif"))
@@ -29,7 +29,9 @@
 (defn init-state []
   (let
     [world-map (read-map "castle.json")
-     textures (tile-textures world-map)]
+     textures (tile-textures world-map)
+     sprite-map (create-sprite-map)
+     ]
     {
      ; Surface to draw projection :
      ; frustum for projection
@@ -46,7 +48,9 @@
      :tiles (world-tiles world-map textures)
 
      ; set some sprites
-     :sprites (load-sprites (q/load-image "world1.png") (sprite-map))
+     ;:sprites (load-sprites (q/load-image "world1.png") (sprite-map))
+     :sprites (reduce concat (map #(get-world-sprites world-map sprite-map %)
+                                  ["npc" "decoration"]))
      ; :sprites
      ; [
      ;  (assoc (:bush (sprite-map)) :x 960 :y 96)

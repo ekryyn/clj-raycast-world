@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" renderorder="right-down" width="15" height="15" tilewidth="64" tileheight="64" nextobjectid="1">
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="15" height="15" tilewidth="64" tileheight="64" nextobjectid="57">
  <tileset firstgid="1" name="floors" tilewidth="64" tileheight="64" tilecount="6" columns="0">
   <terraintypes>
    <terrain name="carpet" tile="-1"/>
@@ -79,7 +79,7 @@
 7,7,7,7,7,7,7,7,7,7,7,7,7,7,7
 </data>
  </layer>
- <layer name="ceiling" width="15" height="15">
+ <layer name="ceiling" width="15" height="15" visible="0">
   <data encoding="csv">
 0,0,0,0,6,6,6,6,6,6,6,0,0,0,0,
 0,0,0,0,6,6,6,6,6,6,6,0,0,0,0,
@@ -98,4 +98,96 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
+ <objectgroup name="npc">
+  <object id="33" name="princess" type="npc" x="480.167" y="161.667">
+   <properties>
+    <property name="nb-columns" type="int" value="4"/>
+    <property name="nb-rows" type="int" value="1"/>
+   </properties>
+   <ellipse/>
+  </object>
+ </objectgroup>
+ <objectgroup name="decoration">
+  <object id="35" name="chandelier" x="370.667" y="93.3333">
+   <properties>
+    <property name="nb-columns" type="int" value="4"/>
+    <property name="nb-rows" type="int" value="1"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="37" name="chandelier" x="586.667" y="94.6667">
+   <properties>
+    <property name="nb-columns" type="int" value="4"/>
+    <property name="nb-rows" type="int" value="1"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="38" name="chandelier" x="352" y="228">
+   <properties>
+    <property name="nb-columns" type="int" value="4"/>
+    <property name="nb-rows" type="int" value="1"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="39" name="chandelier" x="349.333" y="421.333">
+   <properties>
+    <property name="nb-columns" type="int" value="4"/>
+    <property name="nb-rows" type="int" value="1"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="40" name="chandelier" x="613.333" y="228">
+   <properties>
+    <property name="nb-columns" type="int" value="4"/>
+    <property name="nb-rows" type="int" value="1"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="41" name="chandelier" x="604" y="422.667">
+   <properties>
+    <property name="nb-columns" type="int" value="4"/>
+    <property name="nb-rows" type="int" value="1"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="42" name="blue-flower" x="529.333" y="586.667">
+   <ellipse/>
+  </object>
+  <object id="44" name="blue-flower" x="429.333" y="584">
+   <ellipse/>
+  </object>
+  <object id="45" name="blue-flower" x="565.333" y="590.667">
+   <ellipse/>
+  </object>
+  <object id="46" name="blue-flower" x="389.333" y="592">
+   <ellipse/>
+  </object>
+  <object id="47" name="blue-flower" x="613.333" y="589.333">
+   <ellipse/>
+  </object>
+  <object id="48" name="blue-flower" x="653.333" y="589.333">
+   <ellipse/>
+  </object>
+  <object id="49" name="blue-flower" x="345.333" y="589.333">
+   <ellipse/>
+  </object>
+  <object id="50" name="blue-flower" x="310.667" y="592">
+   <ellipse/>
+  </object>
+  <object id="51" name="flower" x="590.667" y="588">
+   <ellipse/>
+  </object>
+  <object id="53" name="flower" x="370.667" y="588">
+   <ellipse/>
+  </object>
+  <object id="54" name="flower" x="328" y="598.667">
+   <ellipse/>
+  </object>
+  <object id="55" name="flower" x="685.333" y="598.667">
+   <ellipse/>
+  </object>
+  <object id="56" name="flower" x="274.667" y="590.667">
+   <ellipse/>
+  </object>
+ </objectgroup>
 </map>

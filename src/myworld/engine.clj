@@ -159,8 +159,8 @@
           dy straight
           v (rotate-vector (- rot) [dy (- dx)])
           [fx fy] (add-vector [player-x player-y] v)
-          c (q/floor  (/ fx UNIT))
-          r (q/floor  (/ fy UNIT))]
+          c (q/floor  (/ fx (float UNIT)))
+          r (q/floor  (/ fy (float UNIT)))]
        {:floor-type (world-cell floor-map r c)
         :fx fx
         :fy fy

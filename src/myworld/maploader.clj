@@ -2,6 +2,8 @@
   (:require [clojure.data.json :as json]
             [quil.core :as q]))
 
+(use 'myworld.sprite)
+
 (def map-location "res/maps/")
 
 (defn tile-filenames
@@ -46,3 +48,12 @@
 
 (defn get-world-layer [world-map layer-name]
   (first (filter #(= layer-name (:name %)) (:layers world-map))))
+
+(defn- object-to-sprite [sprite-map, {obj-name :name, :keys [x y] :as object}]
+  (let [sprite-key (keyword obj-name)
+        sprite (sprite-key sprite-map)]
+    (assoc sprite :x x :y y)))
+
+(defn get-world-sprites [world-map sprite-map layer-name]
+  (let [layer (get-world-layer world-map layer-name)]
+    (map #(object-to-sprite sprite-map %) (:objects layer))))
