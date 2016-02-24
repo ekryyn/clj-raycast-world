@@ -44,20 +44,12 @@
      :tiles (maploader/world-tiles world-map textures)
 
      ; set some sprites
-     ;:sprites (load-sprites (q/load-image "world1.png") (sprite-map))
      :sprites (reduce concat (map #(maploader/get-world-sprites world-map sprite-map %)
                                   ["npc" "decoration"]))
-     ; :sprites
-     ; [
-     ;  (assoc (:bush (sprite-map)) :x 960 :y 96)
-     ;  (assoc (:bush (sprite-map)) :x 800 :y 96)
-     ;
-     ;  ]
 
      :world (maploader/get-world-layer world-map "walls")
      :floors (maploader/get-world-layer world-map "floor")
      :ceilings (maploader/get-world-layer world-map "ceiling")
-     ;:ceilings (load-ceiling-map (q/load-image "world1-ceiling.png"))
 
      :last-frame 0
 
