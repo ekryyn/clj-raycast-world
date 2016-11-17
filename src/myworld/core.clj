@@ -53,7 +53,7 @@
 
      :last-frame 0
 
-     :dialogue (u/create-dialogue "Salut les connards !")
+     :dialogue (u/create-dialogue "Salut les amis !")
 
      ; player position :
      :player-height (/ UNIT 2)
@@ -212,7 +212,7 @@
       (do
         (q/text-size 8)
         (q/fill 255)
-        (q/text (-> state (:dialogue) (:display-text)) 10 100)))
+        (q/text (-> state (:dialogue) (:display-text)) 10 85)))
     (q/pop-matrix)
 
     ; FPS counter
