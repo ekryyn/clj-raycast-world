@@ -1,18 +1,7 @@
-# myworld
+# Raycast World
 
-A Quil sketch designed to ... well, that part is up to you.
+This is a Raycasting project to learn a bit of clojure.
 
-## Usage
+Performances are poor as I draw pixel by pixel.
 
-LightTable - open `core.clj` and press `Ctrl+Shift+Enter` to evaluate the file.
-
-Emacs - run cider, open `core.clj` and press `C-c C-k` to evaluate the file.
-
-REPL - run `(require 'myworld.core)`.
-
-## License
-
-Copyright © 2014 FIXME
-
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Will probably rewrite it using OpenGL textures if I figure out how to do it.
